@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  client
+  sales
+  admin
+}
+
+enum ProjectStatus {
+  waiting
+  in_production
+  draft_submitted
+  revising
+  publish_waiting
+  published
+  post_revising
+  suspended
+}
+
+enum RevisionPhase {
+  pre
+  post
+}
+
+enum RevisionStatus {
+  open
+  done
+}
+
+enum SnsPlatform {
+  instagram
+  x
+  line
+  facebook
+  website
+}
+
+enum AssetKind {
+  logo
+  menu_photo
+  other
+  revision_ref
+}
+
+enum NotificationType {
+  new_request
+  completed
+  revision_requested
+  draft_shared
+  published
+  revision_completed
+}
+
+model User {
+  id          String   @id @default(uuid())
+  googleSub   String   @unique @map("google_sub")
+  email       String
+  displayName String?  @map("display_name")
+  role        Role     @default(client)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  projects      Project[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  clientId    String        @map("client_id")
+  uniqueId    String?       @unique @map("unique_id")
+  status      ProjectStatus @default(waiting)
+  publishedAt DateTime?     @map("published_at")
+  previewUrl  String?       @map("preview_url")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  client        User           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  detail        ProjectDetail?
+  menuItems     MenuItem[]
+  snsLinks      SnsLink[]
+  revisions     Revision[]
+  assets        Asset[]
+  notifications Notification[]
+
+  @@index([clientId])
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectDetail {
+  projectId      String  @id @map("project_id")
+  storeName      String  @map("store_name")
+  repName        String  @map("rep_name")
+  phone          String
+  postalCode     String  @map("postal_code")
+  address        String
+  nearestStation String? @map("nearest_station")
+  businessHours  String? @map("business_hours")
+  holidays       String?
+  otherInfo      String? @map("other_info") @db.Text
+  concept        String? @db.Text
+  brandColor     String? @map("brand_color")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_details")
+}
+
+model MenuItem {
+  id          String  @id @default(uuid())
+  projectId   String  @map("project_id")
+  sortOrder   Int     @map("sort_order")
+  name        String
+  priceText   String? @map("price_text")
+  description String? @db.Text
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assets  Asset[]
+
+  @@index([projectId])
+  @@map("menu_items")
+}
+
+model SnsLink {
+  id        String      @id @default(uuid())
+  projectId String      @map("project_id")
+  platform  SnsPlatform
+  url       String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("sns_links")
+}
+
+model Revision {
+  id         String         @id @default(uuid())
+  projectId  String         @map("project_id")
+  phase      RevisionPhase
+  seqNo      Int            @map("seq_no")
+  content    String         @db.Text
+  targetArea String?        @map("target_area") @db.Text
+  status     RevisionStatus @default(open)
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assets  Asset[]
+
+  @@index([projectId])
+  @@index([projectId, phase])
+  @@map("revisions")
+}
+
+model Asset {
+  id         String    @id @default(uuid())
+  projectId  String    @map("project_id")
+  menuItemId String?   @map("menu_item_id")
+  revisionId String?   @map("revision_id")
+  kind       AssetKind
+  blobUrl    String    @map("blob_url")
+  sizeBytes  Int       @map("size_bytes")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  menuItem MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  revision Revision? @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("assets")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  recipientId String           @map("recipient_id")
+  projectId   String           @map("project_id")
+  type        NotificationType
+  message     String
+  isRead      Boolean          @default(false) @map("is_read")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  recipient User    @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, isRead])
+  @@map("notifications")
+}
