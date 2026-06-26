@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import styles from "./page.module.css";
 import BasicInfoSection from "./_components/BasicInfoSection";
 import SnsSection from "./_components/SnsSection";
@@ -106,7 +107,12 @@ export default function RequestPage() {
             <h1 className={styles.submittedTitle}>制作依頼を受け付けました</h1>
             <p className={styles.submittedText}>
               内容を確認の上、担当者よりご連絡いたします。
+              <br />
+              進捗はダッシュボードからご確認いただけます。
             </p>
+            <Link href="/dashboard" className={styles.dashboardButton}>
+              ダッシュボードを確認する
+            </Link>
           </div>
         </div>
       </main>
@@ -120,6 +126,18 @@ export default function RequestPage() {
         <p className={styles.lead}>
           LP制作に必要な情報を入力してください。
         </p>
+
+        {/* エラー一覧。送信を押してエラーがあれば表示 */}
+        {errors.length > 0 && (
+          <div className={styles.errorBox}>
+            <p className={styles.errorTitle}>入力内容を確認してください</p>
+            <ul className={styles.errorList}>
+              {errors.map((error) => (
+                <li key={error}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className={styles.sections}>
           <BasicInfoSection value={basicInfo} onChange={setBasicInfo} />

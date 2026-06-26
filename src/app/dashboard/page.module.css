@@ -1,0 +1,128 @@
+.main {
+  min-height: 100vh;
+  padding: 48px 16px;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+}
+
+/* モック確認用トグル */
+.mockToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: #fffbeb;
+  border: 1px dashed #d97706;
+  border-radius: 8px;
+}
+
+.mockLabel {
+  font-size: 0.8rem;
+  color: #d97706;
+  font-weight: 600;
+}
+
+.toggleButton {
+  padding: 4px 16px;
+  font-size: 0.85rem;
+  border: 1px solid #d4d4d4;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #555555;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.toggleButton.active {
+  background: #2f5d50;
+  color: #ffffff;
+  border-color: #2f5d50;
+}
+
+/* 案件カード */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 16px;
+}
+
+.storeName {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.statusBadge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.createdAt {
+  font-size: 0.85rem;
+  color: #777777;
+  margin-bottom: 20px;
+}
+
+.detailLink {
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2f5d50;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* 案件なし */
+.empty {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 64px 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.emptyText {
+  font-size: 1rem;
+  color: #555555;
+}
+
+.requestButton {
+  display: inline-block;
+  padding: 12px 40px;
+  background-color: #2f5d50;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.requestButton:hover {
+  background-color: #254a3f;
+}
