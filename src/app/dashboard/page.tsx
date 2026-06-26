@@ -1,50 +1,31 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import styles from "./page.module.css";
-import { mockProject, mockProjectNull } from "@/lib/mock-data";
+import { getCurrentUser } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 import { STATUS_CONFIG } from "@/lib/types";
-import type { ProjectSummary } from "@/lib/types";
 
-export default function DashboardPage() {
-  // モック確認用: true = 案件あり / false = 案件なし
-  // 本番では削除し、APIから取得した値を使う
-  const [showProject, setShowProject] = useState(true);
+export default async function DashboardPage() {
+  // ログイン中のユーザーを取得
+  const user = await getCurrentUser();
+  if (!user) redirect("/");
 
-  const project: ProjectSummary | null = showProject
-    ? mockProject
-    : mockProjectNull;
+  // そのユーザーの案件を取得
+  const project = await prisma.project.findFirst({
+    where: { clientId: user.id },
+    include: { detail: true },
+  });
 
   return (
     <main className={styles.main}>
       <div className={styles.container}>
         <h1 className={styles.title}>ダッシュボード</h1>
 
-        {/* モック確認用の切り替えボタン。本番では削除する */}
-        <div className={styles.mockToggle}>
-          <span className={styles.mockLabel}>【モック確認用】</span>
-          <button
-            type="button"
-            className={`${styles.toggleButton} ${showProject ? styles.active : ""}`}
-            onClick={() => setShowProject(true)}
-          >
-            案件あり
-          </button>
-          <button
-            type="button"
-            className={`${styles.toggleButton} ${!showProject ? styles.active : ""}`}
-            onClick={() => setShowProject(false)}
-          >
-            案件なし
-          </button>
-        </div>
-
-        {project ? (
+        {project && project.detail ? (
           /* 案件あり */
           <div className={styles.card}>
             <div className={styles.cardHeader}>
-              <h2 className={styles.storeName}>{project.storeName}</h2>
+              <h2 className={styles.storeName}>{project.detail.storeName}</h2>
               <span
                 className={styles.statusBadge}
                 style={{
@@ -55,8 +36,13 @@ export default function DashboardPage() {
                 {STATUS_CONFIG[project.status].label}
               </span>
             </div>
-            <p className={styles.createdAt}>依頼日: {project.createdAt}</p>
-            <Link href={`/project/${project.id}`} className={styles.detailLink}>
+            <p className={styles.createdAt}>
+              依頼日: {project.createdAt.toLocaleDateString("ja-JP")}
+            </p>
+            <Link
+              href={`/project/${project.id}`}
+              className={styles.detailLink}
+            >
               案件の詳細を確認する →
             </Link>
           </div>

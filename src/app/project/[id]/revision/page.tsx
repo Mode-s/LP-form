@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
+import { submitRevision } from "./actions";
 import Link from "next/link";
 import styles from "./page.module.css";
 import ImageUploader from "@/app/request/_components/ImageUploader";
@@ -14,6 +16,8 @@ function validate(content: string): string[] {
 }
 
 export default function RevisionPage() {
+  const params = useParams();
+  const projectId = params.id as string;
   const [content, setContent] = useState("");
   const [targetArea, setTargetArea] = useState("");
   const [images, setImages] = useState<ImageInput[]>([]);
@@ -30,10 +34,18 @@ export default function RevisionPage() {
       return;
     }
 
-    // モック: 1秒待って完了にする
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const result = await submitRevision(projectId, content, targetArea);
+
     setIsSubmitting(false);
+
+    if (result?.error) {
+      setErrors([result.error]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setIsSubmitted(true);
   };
 

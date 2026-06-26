@@ -1,43 +1,49 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
+import { redirect, notFound } from "next/navigation";
 import styles from "./page.module.css";
-import { mockProjectDetail } from "@/lib/mock-data";
+import { getCurrentUser } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 import { STATUS_CONFIG } from "@/lib/types";
-import type { ProjectDetail, ProjectStatus } from "@/lib/types";
+import CompleteButton from "./CompleteButton";
 
-// モック確認用: 切り替えられるステータス一覧
-const MOCK_STATUSES: ProjectStatus[] = [
-  "draft_submitted",
-  "revising",
-  "publish_waiting",
-  "published",
-];
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
-export default function ProjectDetailPage() {
-  const [status, setStatus] = useState<ProjectStatus>(
-    mockProjectDetail.status
-  );
+export default async function ProjectDetailPage({ params }: Props) {
+  const { id } = await params;
 
-  // 現在のステータスをモックデータに反映
-  const project: ProjectDetail = { ...mockProjectDetail, status };
+  // ログイン確認
+  const user = await getCurrentUser();
+  if (!user) redirect("/");
 
-  // ステータスに応じてアクションボタンの表示を決める
-  const showActions = status === "draft_submitted";
-  const showRevisionButton =
-    status === "draft_submitted" || status === "published";
+  // 案件取得（自分の案件のみ）
+  const project = await prisma.project.findUnique({
+    where: { id },
+    include: {
+      detail: true,
+      revisions: {
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+
+  // 存在しない or 他人の案件はnotFound
+  if (!project || project.clientId !== user.id) notFound();
+
+  // 修正依頼ボタンを表示するか
+  const showActions = project.status === "draft_submitted";
+  const showPostRevision = project.status === "published";
 
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        {/* 戻るリンク */}
         <Link href="/dashboard" className={styles.back}>
           ← ダッシュボードへ戻る
         </Link>
 
         <div className={styles.header}>
-          <h1 className={styles.title}>{project.storeName}</h1>
+          <h1 className={styles.title}>{project.detail?.storeName}</h1>
           <span
             className={styles.statusBadge}
             style={{
@@ -47,23 +53,6 @@ export default function ProjectDetailPage() {
           >
             {STATUS_CONFIG[project.status].label}
           </span>
-        </div>
-
-        {/* モック確認用の切り替え */}
-        <div className={styles.mockToggle}>
-          <span className={styles.mockLabel}>【モック確認用】ステータス切り替え:</span>
-          <div className={styles.mockButtons}>
-            {MOCK_STATUSES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={`${styles.toggleButton} ${status === s ? styles.active : ""}`}
-                onClick={() => setStatus(s)}
-              >
-                {STATUS_CONFIG[s].label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* 初稿URL */}
@@ -113,7 +102,9 @@ export default function ProjectDetailPage() {
                     </p>
                   )}
                   <p className={styles.revisionContent}>{rev.content}</p>
-                  <p className={styles.revisionDate}>{rev.createdAt}</p>
+                  <p className={styles.revisionDate}>
+                    {rev.createdAt.toLocaleDateString("ja-JP")}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -122,7 +113,7 @@ export default function ProjectDetailPage() {
           )}
         </section>
 
-        {/* アクションボタン（初稿提出済みのときのみ表示） */}
+        {/* 初稿提出済みのときのアクション */}
         {showActions && (
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>確認結果</h2>
@@ -136,15 +127,13 @@ export default function ProjectDetailPage() {
               >
                 修正依頼をする
               </Link>
-              <button type="button" className={styles.completeButton}>
-                完了にする
-              </button>
+              <CompleteButton projectId={project.id} />
             </div>
           </section>
         )}
 
-        {/* 公開済みのときは公開後修正ボタンを表示 */}
-        {status === "published" && (
+        {/* 公開済みのときの公開後修正 */}
+        {showPostRevision && (
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>公開後の修正</h2>
             <p className={styles.actionNote}>

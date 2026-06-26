@@ -1,5 +1,5 @@
 "use client";
-
+import { submitRequest } from "./actions";
 import { useState } from "react";
 import Link from "next/link";
 import styles from "./page.module.css";
@@ -80,20 +80,33 @@ export default function RequestPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const handleSubmit = async () => {
-    // バリデーション実行
     const newErrors = validate(basicInfo, menuItems);
     setErrors(newErrors);
 
-    // エラーがあれば先頭へスクロールして止める
     if (newErrors.length > 0) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    // モック: 実際の送信の代わりに1秒待って完了にする
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const result = await submitRequest({
+      basicInfo,
+      snsLinks,
+      menuItems,
+      logo,
+      otherAssets,
+      optional,
+    });
+
     setIsSubmitting(false);
+
+    if (result?.error) {
+      setErrors([result.error]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setIsSubmitted(true);
   };
 
